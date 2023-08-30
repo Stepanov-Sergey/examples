@@ -22,7 +22,7 @@ from sklearn.preprocessing import normalize # Добавление нормал�
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, LSTM
 from tensorflow.keras import regularizers # Добавление L2 регуляризации
-
+import audiomentations as A # Аугментация данных
 # Путь к директории с файлами WAV
 wav_directory = "путь_к_директории_wav"
 
@@ -32,6 +32,14 @@ classes = ["команда_1", "команда_2", "команда_3"]
 # Параметры аудио
 sample_rate = 22050
 duration = 1  # Длительность каждого аудиофайла
+
+# Аугментация данных
+augmenter = A.Compose([
+    A.AddGaussianNoise(p=0.5),
+    A.TimeStretch(p=0.5),
+    A.PitchShift(p=0.5),
+    A.Shift(p=0.5),
+])
 
 # Загрузка данных
 data = []
@@ -50,6 +58,11 @@ for filename in os.listdir(wav_directory):
         # Добавление признаков и метки в списки данных
         data.append(mfcc_normalized)
         labels.append(classes.index(label))
+                
+        # Аугментация данных
+        augmented_data = np.array([augmenter(samples=y, sample_rate=sr) for _ in range(5)])  # Генерация 5 дополнительных примеров
+        data.extend(augmented_data)
+        labels.extend([classes.index(label)] * 5)
 
 # Разбиение данных на обучающую и проверочную выборки
 train_data, test_data, train_labels, test_labels = train_test_split(
