@@ -18,8 +18,10 @@
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize # Добавление нормализации
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, LSTM
+from tensorflow.keras import regularizers # Добавление L2 регуляризации
 
 # Путь к директории с файлами WAV
 wav_directory = "путь_к_директории_wav"
@@ -58,7 +60,7 @@ train_data, test_data, train_labels, test_labels = train_test_split(
 model = Sequential()
 model.add(LSTM(64, input_shape=(train_data.shape[1], train_data.shape[2])))
 model.add(Dropout(0.2))  # Добавление Dropout регуляризации
-model.add(Dense(len(classes), activation="softmax"))
+model.add(Dense(len(classes), activation="softmax", kernel_regularizer=regularizers.l2(0.01)))  # Добавление L2 регуляризации
 
 # Компиляция модели
 model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
