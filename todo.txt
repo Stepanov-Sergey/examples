@@ -1,0 +1,85 @@
+'''
+Для настройки гиперпараметров модели в вашем коде вы можете использовать методы подбора гиперпараметров, такие как сеточный поиск или случайный поиск. Вот пример использования сеточного поиска с помощью библиотеки scikit-learn:
+'''
+
+
+import os
+import numpy as np
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import normalize
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, LSTM, Dropout
+from tensorflow.keras import regularizers
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+
+# Путь к директории с файлами WAV
+wav_directory = "путь_к_директории_wav"
+
+# Список классов команд
+classes = ["команда_1", "команда_2", "команда_3"]
+
+# Параметры аудио
+sample_rate = 22050
+duration = 1  # Длительность каждого аудиофайла
+
+# Загрузка данных
+data = []
+labels = []
+
+for filename in os.listdir(wav_directory):
+    if filename.endswith(".wav"):
+        wav_path = os.path.join(wav_directory, filename)
+        label = filename.split("_")[0]  # Извлечение метки класса из имени файла
+        
+        # Извлечение признаков из аудиофайла
+        y, sr = librosa.load(wav_path, sr=sample_rate, duration=duration)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr)
+        
+        # Нормализация признаков
+        mfcc_normalized = normalize(mfcc)
+        
+        # Добавление признаков и метки в списки данных
+        data.append(mfcc_normalized)
+        labels.append(classes.index(label))
+
+# Разбиение данных на обучающую и проверочную выборки
+train_data, test_data, train_labels, test_labels = train_test_split(
+    np.array(data), np.array(labels), test_size=0.2, random_state=42
+)
+
+# Создание функции для создания модели
+def create_model(optimizer="adam", activation="relu", neurons=64, dropout_rate=0.2, l2_regularization=0.01):
+    model = Sequential()
+    model.add(LSTM(neurons, input_shape=(train_data.shape[1], train_data.shape[2])))
+    model.add(Dropout(dropout_rate))
+    model.add(Dense(len(classes), activation=activation, kernel_regularizer=regularizers.l2(l2_regularization)))
+    model.compile(optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+    return model
+
+# Создание модели KerasClassifier для использования в GridSearchCV
+model = KerasClassifier(build_fn=create_model, verbose=0)
+
+# Определение сетки параметров для поиска
+param_grid = {
+    "optimizer": ["adam", "rmsprop"],
+    "activation": ["relu", "sigmoid"],
+    "neurons": [32, 64, 128],
+    "dropout_rate": [0.2, 0.3, 0.4],
+    "l2_regularization": [0.01, 0.1, 0.5]
+}
+
+# Поиск лучших параметров с использованием сеточного поиска
+grid = GridSearchCV(estimator=model, param_grid=param_grid, cv=3)
+grid_result = grid.fit(train_data, train_labels
+'''
+Сетка параметров для поиска представляет собой комбинацию различных значений гиперпараметров модели, которые вы хотите настроить. Каждый параметр имеет свой диапазон значений, из которого будет выбираться оптимальное значение в процессе поиска.
+
+В примере сетки параметров для поиска, которую я предоставил выше, есть несколько гиперпараметров модели, которые мы хотим настроить:
+
+optimizer: оптимизатор, используемый для обучения модели. В данном случае мы исследуем два оптимизатора - "adam" и "rmsprop".
+activation: функция активации, используемая в слоях модели. Мы исследуем две функции активации - "relu" и "sigmoid".
+neurons: количество нейронов в LSTM слое. Мы исследуем три значения - 32, 64 и 128.
+dropout_rate: процент отключения нейронов в Dropout слое. Мы исследуем три значения - 0.2, 0.3 и 0.4.
+l2_regularization: коэффициент регуляризации L2, применяемый к весам модели. Мы исследуем три значения - 0.01, 0.1 и 0.5.
+В процессе сеточного поиска, библиотека GridSearchCV будет перебирать все возможные комбинации значений из заданных диапазонов параметров и обучать модель с каждой комбинацией. Затем будет выбрана комбинация параметров, которая дала наилучшую производительность модели на проверочной выборке.
+'''
