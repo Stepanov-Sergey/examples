@@ -57,6 +57,7 @@ train_data, test_data, train_labels, test_labels = train_test_split(
 # Создание модели нейронной сети
 model = Sequential()
 model.add(LSTM(64, input_shape=(train_data.shape[1], train_data.shape[2])))
+model.add(Dropout(0.2))  # Добавление Dropout регуляризации
 model.add(Dense(len(classes), activation="softmax"))
 
 # Компиляция модели
